@@ -19,29 +19,42 @@ const FeedbackForm = () => {
 
   useEffect(() => {
     const codeReader = new BrowserQRCodeReader();
+  
+    const videoConstraints = {
+      width: { ideal: 1280 }, // Adjust width and height as needed
+      height: { ideal: 720 },
+      facingMode: 'environment' // Use the back camera
+    };
+  
     codeReader
       .getVideoInputDevices()
       .then((videoInputDevices) => {
-        const videoInputDevice = videoInputDevices[0];
-        codeReader.decodeFromInputVideoDevice(videoInputDevice.deviceId, 'video')
-          .then((result) => {
-            const qrText = result.getText();
-            setResult(qrText);
-            setQRData(qrText); // Update the state with the scanned QR code data
-          })
-          .catch((err) => {
-            console.error(err);
-          });
+        // Find the back camera
+        const backCamera = videoInputDevices.find(device => device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear'));
+        const videoInputDevice = backCamera || videoInputDevices[0]; // Use back camera if found, otherwise default to the first device
+  
+        codeReader.decodeFromInputVideoDevice(videoInputDevice.deviceId, 'video', {
+          ...videoConstraints,
+          tryHarder: true // Try harder to decode QR codes
+        })
+        .then((result) => {
+          const qrText = result.getText();
+          setResult(qrText);
+          setQRData(qrText); // Update the state with the scanned QR code data
+        })
+        .catch((err) => {
+          console.error(err);
+        });
       })
       .catch((err) => {
         console.error(err);
       });
-      
+  
     return () => {
       codeReader.reset();
     };
   }, []);
-
+  
   const handleInputChange = (e) => {
     setQRData(e.target.value); // Update the QR code data when input changes
   };
@@ -77,18 +90,41 @@ const FeedbackForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+     // Check if any input field is empty
+  if (!trust || !experience || !comprehensiveness || !support || !prices || !recommend || !feedback || !qrData) {
+    alert('Please fill in all fields before submitting.');
+    return;
+  }
+
     try {
-      const res = await axios.post('http://localhost:3001/feedback', {
+      const res = await axios.post('https://fbbackend.spacetextiles.net/feedback', {
         trust,
         experience,
         comprehensiveness,
         support,
         prices,
         recommend,
-        feedback
+        feedback,
+        qrData // Include QR code data in the request body
       });
       console.log(res.data);
       // Handle success
+       // Clear all input fields
+    setTrust('');
+    setExperience('');
+    setComprehensiveness('');
+    setSupport('');
+    setPrices('');
+    setRecommend('');
+    setFeedback('');
+    setQRData('');
+    setResult('No QR code scanned');
+
+    // Refresh the page
+    window.location.reload();
+
+    alert('Feedback Submitted successfully')
+
     } catch (error) {
       console.error(error);
       // Handle error
@@ -97,8 +133,31 @@ const FeedbackForm = () => {
 
 
   const handleNextStep = () => {
-    setCurrentStep(currentStep + 1); // Move to the next step
+    // Regular expression pattern to match "KJM" or alphanumeric values
+    const alphanumericRegex = /^KTM\/[a-zA-Z0-9]+\/[a-zA-Z0-9]+|[0-9]{2}\/[0-9]{2}\/[0-9]{4}$/;
+
+
+    
+    // Check if the QR code data matches the pattern
+    if (alphanumericRegex.test(qrData.trim().toUpperCase())) {
+      // Move to the next step
+      setCurrentStep(currentStep + 1);
+    } else {
+      // Show error message or prevent user from proceeding
+      alert('Please Scan Valid value in the QR code data field to proceed.');
+      // Optionally, you can clear the input field here
+      // setQRData('');
+    }
   };
+  
+  useEffect(() => {
+    // Check if qrData is filled and matches the pattern
+    if (qrData.trim() !== '' && handleNextStep()) {
+      // Navigate to the next step or perform other actions
+      // For example:
+      // navigateToNextPage();
+    }
+  }, [qrData]); // This effect runs whenever qrData changes
 
 
 
@@ -126,27 +185,25 @@ const FeedbackForm = () => {
       // If you want to edit the QR data manually
         placeholder="Scanned QR Code Data"
       /> */}
-      <video id="video" width="300" height="300" style={{ border: '1px solid black' }}></video>
+      
+      <video id="video" width="300" height="300" style={{ borderRadius:'5px' }}></video>
       <p>Scanned Result: {result}</p>
+      <div className="flex flex-col sm:flex-row border sm:flex-wrap sm:justify-center">
       <input
         type="text"
         value={qrData}
         onChange={handleInputChange}
         placeholder="QR Code Data"
+        size="md"
+        color="blue"
+        className="border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder"
       />
+    </div>
+
         {/* Radio options */}
       </div>
     </div>
     {/* Button to move to the next step */}
-    <div className="text-center">
-      <button
-        type="button"
-        onClick={handleNextStep}
-        className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition duration-300 ease-in-out"
-      >
-        Next
-      </button>
-    </div>
   </form>
 )}
 {currentStep === 2 && (
@@ -447,16 +504,16 @@ const FeedbackForm = () => {
             ></textarea>
           </div>
 
-          <div className="flex justify-between">
+          {/* <div className="flex justify-between">
       {/* Previous button */}
-      <button
+      {/* <button
         type="button"
         onClick={() => setCurrentStep(currentStep - 1)} // Move to the previous step
         className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-md transition duration-300 ease-in-out"
       >
         Previous
       </button>
-</div>
+</div> */} 
           <div className="text-center">
             <button
               type="submit"
