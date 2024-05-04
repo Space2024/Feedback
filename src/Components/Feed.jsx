@@ -12,7 +12,7 @@ const FeedbackForm = () => {
   const [recommend, setRecommend] = useState('');
   const [feedback, setFeedback] = useState('');
   const [currentStep, setCurrentStep] = useState(1); // Track current step
-  const [result, setResult] = useState('No QR code scanned');
+  const [, setResult] = useState('No QR code scanned');
   const [qrData, setQRData] = useState(''); // State to hold the QR code data
 
 
@@ -55,9 +55,9 @@ const FeedbackForm = () => {
     };
   }, []);
   
-  const handleInputChange = (e) => {
-    setQRData(e.target.value); // Update the QR code data when input changes
-  };
+  // const handleInputChange = (e) => {
+  //   setQRData(e.target.value); // Update the QR code data when input changes
+  // };
 
   const handleOptionChange = (optionValue) => {
     setTrust(optionValue);
@@ -145,8 +145,9 @@ const FeedbackForm = () => {
     } else {
       // Show error message or prevent user from proceeding
       alert('Please Scan Valid value in the QR code data field to proceed.');
+      window.location.reload();
       // Optionally, you can clear the input field here
-      // setQRData('');
+      setQRData('');
     }
   };
   
@@ -186,18 +187,17 @@ const FeedbackForm = () => {
         placeholder="Scanned QR Code Data"
       /> */}
       
-      <video id="video" width="300" height="300" style={{ borderRadius:'5px' }}></video>
-      <p>Scanned Result: {result}</p>
-      <div className="flex flex-col sm:flex-row border sm:flex-wrap sm:justify-center">
-      <input
+      <video id="video" width="300" height="300" style={{ borderRadius:'5px', marginLeft:'30px' }}></video>
+
+      <div className="flex flex-col sm:flex-wrap sm:justify-center">
+      {/* <input
         type="text"
         value={qrData}
         onChange={handleInputChange}
-        placeholder="QR Code Data"
         size="md"
         color="blue"
         className="border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder"
-      />
+      /> */}
     </div>
 
         {/* Radio options */}
